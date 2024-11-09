@@ -21,7 +21,6 @@ def build_graph(times: list, temps: list, data_lenght: int, city: str):
     ax.plot(x, y) # Drawing a line on the graph
     ax.scatter(x, y) # Drawing spots on the grapchic
     fig.savefig('forecast.png', bbox_inches='tight', pad_inches=0.2) # Saving cropped picture of graph
-    plt.show()
 
 # Call this function if run this file
 if __name__ == "__main__":

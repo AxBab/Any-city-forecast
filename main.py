@@ -2,14 +2,28 @@ from bs4 import BeautifulSoup # Library to parse the saits
 import requests # Library to make requests to the saits
 import pymysql
 
+import logging
+from aiogram import Bot, Dispatcher, types, executor
+
 from graphic import build_graph
-from config import host, user, password, db_name
+from config import host, user, password, db_name, token
 
 # Сайт для парсинга
 # https://world-weather.ru/
 
-while True:
-    city_name = input("Введите название города: ")
+
+logging.basicConfig(level=logging.INFO)
+bot = Bot(token=token)
+dp = Dispatcher(bot)
+
+# Greeting function
+@dp.message_handler(commands=["start"])
+async def hello_message(message: types.Message):
+    await message.answer("Здравствуйте, введите комманду /forecast и название города для получение прогноза погоды")
+
+@dp.message_handler(commands=["forecast"])
+async def forecast(message: types.Message):
+    city_name = message.text.split()[1]
 
     # Creating connection to DB
     try:
@@ -89,8 +103,19 @@ while True:
         # print("Temps:", temps_pure)
 
         pure_data = list(zip(times_pure, temps_pure))
-        for i in pure_data:
-            print(f"{i[0]}: {i[1]}")
+        # # Printing data into console
+        # for i in pure_data:
+        #     print(f"{i[0]}: {i[1]}")
+        
+        await message.answer(pure_data)
 
         # Building a graphic
         build_graph(times=times_pure, temps=temps_pure, data_lenght=data_lenght, city=city) # X scale — times, Y scale — temperatures
+
+        # Sending photo of graphic to user
+        with open('forecast.png', 'rb') as photo: # Preparing photo before sending
+            await message.answer_photo(photo, caption=f"Прогоноз погоды в городе {city_name}") # Sending photo to user
+
+
+if __name__ == "__main__":
+    executor.start_polling(dp,skip_updates=True)
