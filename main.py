@@ -1,27 +1,29 @@
+import asyncio
 from bs4 import BeautifulSoup # Library to parse the saits
 import requests # Library to make requests to the saits
 import pymysql
 
 import logging
-from aiogram import Dispatcher, types, Bot, executor
+from aiogram import Dispatcher, types, Bot
+from aiogram.filters import CommandStart, Command
+from aiogram.types import FSInputFile
 
-from graphic import build_graph
+from app.graphic import build_graph
 from config import host, user, password, db_name, token
 
 # Сайт для парсинга
 # https://world-weather.ru/
 
 
-logging.basicConfig(level=logging.INFO)
 bot = Bot(token=token)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
 # Greeting function
-@dp.message_handler(commands=["start"])
+@dp.message(CommandStart())
 async def hello_message(message: types.Message):
     await message.answer("Здравствуйте, введите комманду /forecast и название города для получение прогноза погоды")
 
-@dp.message_handler(commands=["forecast"])
+@dp.message(Command("forecast"))
 async def forecast(message: types.Message):
     city_name = message.text.split()[1]
 
@@ -107,15 +109,19 @@ async def forecast(message: types.Message):
         # for i in pure_data:
         #     print(f"{i[0]}: {i[1]}")
         
-        await message.answer(pure_data)
+        ans = "".join([f"{time} : {temp}\n" for time, temp in pure_data])
+        await message.answer(ans)
 
         # Building a graphic
         build_graph(times=times_pure, temps=temps_pure, data_lenght=data_lenght, city=city) # X scale — times, Y scale — temperatures
 
         # Sending photo of graphic to user
-        with open('forecast.png', 'rb') as photo: # Preparing photo before sending
-            await message.answer_photo(photo, caption=f"Прогоноз погоды в городе {city_name}") # Sending photo to user
+        photo = FSInputFile('app/forecast.png')
+        await message.answer_photo(photo, caption=f"Прогоноз погоды в городе {city_name} на сегодня") # Sending photo to user
 
+async def main():
+    logging.basicConfig(level=logging.INFO)
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    executor.start_polling(dp,skip_updates=True)
+    asyncio.run(main())
