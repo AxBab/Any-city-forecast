@@ -3,7 +3,7 @@ import requests # Library to make requests to the saits
 import pymysql
 
 import logging
-from aiogram import Bot, Dispatcher, types, executor
+from aiogram import Dispatcher, types, Bot, executor
 
 from graphic import build_graph
 from config import host, user, password, db_name, token
